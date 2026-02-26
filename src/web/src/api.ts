@@ -180,3 +180,18 @@ export const isWhatsAppConfigured = () =>
 
 export const sendWhatsAppReminder = (citaId: string) =>
   request<{ message: string }>(`/whatsapp/send-reminder/${citaId}`, { method: 'POST' });
+
+// ── Chatbot AI ──
+export interface ChatMessagePayload {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export const sendChatMessage = (slug: string, messages: ChatMessagePayload[]) =>
+  request<{ response: string }>(`/chat/${slug}`, {
+    method: 'POST',
+    body: JSON.stringify({ messages }),
+  });
+
+export const isChatbotConfigured = () =>
+  request<{ configured: boolean }>('/chat/configured');

@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getClinicaProfile, bookAppointment } from '../api';
+import ChatWidget from '../components/ChatWidget';
 import {
   MapPin, Phone, CheckCircle, Star, Shield, Clock, Heart,
   Sparkles, Smile, Stethoscope, CalendarCheck, ArrowRight, X,
@@ -283,6 +284,9 @@ export default function LandingPage() {
           <p>&copy; {new Date().getFullYear()} {clinica.nombre}. Powered by <span className="font-semibold text-gray-500">DentiFlow</span></p>
         </div>
       </footer>
+
+      {/* ═══════════════════════════ AI CHAT WIDGET ═══════════════════════════ */}
+      <ChatWidget slug={slug!} clinicaNombre={clinica.nombre} />
 
       {/* ═══════════════════════════ BOOKING MODAL ═══════════════════════════ */}
       {showBooking && (

@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddScoped<CitaService>();
         services.AddScoped<DentistaService>();
         services.AddScoped<PacienteService>();
+        services.AddScoped<ChatService>();
         return services;
     }
 }

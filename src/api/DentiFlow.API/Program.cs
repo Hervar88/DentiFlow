@@ -330,6 +330,30 @@ app.MapPost("/whatsapp/send-reminder/{citaId:guid}", async (Guid citaId, CitaSer
 .WithName("SendWhatsAppReminder")
 .WithTags("WhatsApp");
 
+// ══════════════════════════════════════════════════════════════
+// ──── Chatbot AI Endpoints ────
+// ══════════════════════════════════════════════════════════════
+
+app.MapPost("/chat/{slug}", async (string slug, ChatRequest body, ChatService chatSvc, CancellationToken ct) =>
+{
+    if (body.Messages is null || body.Messages.Count == 0)
+        return Results.BadRequest(new { error = "Se requiere al menos un mensaje" });
+
+    var chatMessages = body.Messages
+        .Select(m => new DentiFlow.Application.Interfaces.ChatMessage(m.Role, m.Content))
+        .ToList();
+
+    var response = await chatSvc.ProcessMessageAsync(slug, chatMessages, ct);
+    return Results.Ok(new { response });
+})
+.WithName("ChatWithBot")
+.WithTags("Chatbot");
+
+app.MapGet("/chat/configured", (ChatService chatSvc) =>
+    Results.Ok(new { configured = chatSvc.IsConfigured }))
+.WithName("IsChatbotConfigured")
+.WithTags("Chatbot");
+
 // ──── Health Check ────
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
@@ -340,3 +364,7 @@ record PaymentPreferenceRequest(Guid CitaId);
 
 record MercadoPagoWebhookBody(string? Type, string? Topic, MercadoPagoWebhookData? Data);
 record MercadoPagoWebhookData(string? Id);
+
+// ── Request DTOs for Chatbot endpoints ──
+record ChatRequest(List<ChatMessageDto> Messages);
+record ChatMessageDto(string Role, string Content);

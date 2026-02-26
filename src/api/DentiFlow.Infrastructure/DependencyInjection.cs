@@ -43,6 +43,11 @@ public static class DependencyInjection
             configuration.GetSection(TwilioOptions.SectionName));
         services.AddScoped<IWhatsAppService, TwilioWhatsAppService>();
 
+        // OpenAI Chatbot
+        services.Configure<OpenAiOptions>(
+            configuration.GetSection(OpenAiOptions.SectionName));
+        services.AddScoped<IChatbotService, OpenAiChatbotService>();
+
         return services;
     }
 }
