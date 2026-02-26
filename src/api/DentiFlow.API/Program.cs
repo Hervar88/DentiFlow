@@ -6,6 +6,7 @@ using DentiFlow.Domain.Entities;
 using DentiFlow.Infrastructure;
 using DentiFlow.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,18 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// OpenAPI / Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "DentiFlow API",
-        Version = "v1",
-        Description = "API para gestión de clínicas dentales — citas, pacientes, dentistas, pagos e integraciones.",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact { Name = "DentiFlow" }
-    });
-});
+// OpenAPI
+builder.Services.AddOpenApi();
 
 // CORS for React frontend
 builder.Services.AddCors(options =>
@@ -37,12 +28,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Swagger UI (always enabled — the API has no auth yet)
-app.UseSwagger();
-app.UseSwaggerUI(options =>
+// OpenAPI doc + Scalar interactive UI
+app.MapOpenApi();
+app.MapScalarApiReference(options =>
 {
-    options.SwaggerEndpoint("/swagger/v1/swagger.json", "DentiFlow API v1");
-    options.DocumentTitle = "DentiFlow API";
+    options.Title = "DentiFlow API";
+    options.Theme = ScalarTheme.BluePlanet;
+    options.DefaultHttpClient = new(ScalarTarget.JavaScript, ScalarClient.Fetch);
 });
 
 // Auto-migrate + seed in development
