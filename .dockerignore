@@ -1,0 +1,17 @@
+# .NET
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+
+# Node
+**/node_modules/
+**/dist/
+
+# Docker
+**/docker-compose.override.yml
+
+# IDE
+.vs/
+.vscode/
+*.swp

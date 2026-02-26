@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="DentiFlow.API/DentiFlow.API.csproj" />
+  <Project Path="DentiFlow.Application/DentiFlow.Application.csproj" />
+  <Project Path="DentiFlow.Domain/DentiFlow.Domain.csproj" />
+  <Project Path="DentiFlow.Infrastructure/DentiFlow.Infrastructure.csproj" />
+</Solution>

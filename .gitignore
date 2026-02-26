@@ -1,0 +1,27 @@
+# .NET
+**/bin/
+**/obj/
+*.user
+*.suo
+*.DotSettings
+
+# Node
+node_modules/
+dist/
+
+# Environment
+.env
+*.local
+
+# IDE
+.vs/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+pgdata/
