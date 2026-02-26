@@ -14,7 +14,17 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // OpenAPI / Swagger
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "DentiFlow API",
+        Version = "v1",
+        Description = "API para gestión de clínicas dentales — citas, pacientes, dentistas, pagos e integraciones.",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact { Name = "DentiFlow" }
+    });
+});
 
 // CORS for React frontend
 builder.Services.AddCors(options =>
@@ -27,6 +37,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Swagger UI (always enabled — the API has no auth yet)
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "DentiFlow API v1");
+    options.DocumentTitle = "DentiFlow API";
+});
+
 // Auto-migrate + seed in development
 if (app.Environment.IsDevelopment())
 {
@@ -34,7 +52,6 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<DentiFlowDbContext>();
     await db.Database.MigrateAsync();
     await SeedData.InitializeAsync(app.Services);
-    app.MapOpenApi();
 }
 
 app.UseCors();
