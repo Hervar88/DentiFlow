@@ -65,13 +65,13 @@ Generate a professional landing page for a dental clinic called 'DentiFlow' usin
 
 ---
 
-## 🤖 Fase 5: AI Chatbot (Receptionist)
+## 🤖 Fase 5: AI Chatbot (Receptionist) ✅
 *Objetivo: Automatizar dudas y pre-agendado.*
 
-1.  **Motor de IA:** Usar Gemini API o OpenAI.
-2.  **RAG (Retrieval-Augmented Generation):**
-    - Alimentar a la IA con el JSON de especialidades y horarios de la clínica para que no invente datos.
-3.  **Widget de Chat:** Flotante en la landing page.
+1.  **Motor de IA:** ✅ OpenAI (`gpt-4o-mini`) via `IChatbotService` / `OpenAiChatbotService`.
+2.  **RAG (Retrieval-Augmented Generation):** ✅ `ChatService` construye system prompt dinámico con datos reales de la clínica (nombre, dirección, teléfono, especialidades, equipo médico, horarios, métodos de pago).
+3.  **Widget de Chat:** ✅ `ChatWidget.tsx` flotante en la landing page con burbuja animada, panel expandible, historial de conversación, indicador de escritura y manejo graceful de errores.
+4.  **Endpoints:** `POST /chat/{slug}` (stateless) + `GET /chat/configured`.
 
 ---
 
