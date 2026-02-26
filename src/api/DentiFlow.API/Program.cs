@@ -241,7 +241,74 @@ app.MapPost("/google-calendar/webhook", async (HttpContext ctx, IGoogleCalendarS
 .WithName("GoogleCalendarWebhook")
 .WithTags("GoogleCalendar");
 
+// ══════════════════════════════════════════════════════════════
+// ──── Mercado Pago Payment Endpoints ────
+// ══════════════════════════════════════════════════════════════
+
+app.MapPost("/payments/create-preference", async (PaymentPreferenceRequest request, IMercadoPagoService mpSvc, CancellationToken ct) =>
+{
+    try
+    {
+        var result = await mpSvc.CreatePreferenceAsync(request.CitaId, ct);
+        return Results.Ok(result);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+})
+.WithName("CreatePaymentPreference")
+.WithTags("Payments");
+
+app.MapPost("/payments/webhook", async (HttpContext ctx, IMercadoPagoService mpSvc, CancellationToken ct) =>
+{
+    // Mercado Pago sends notifications as query params or JSON body
+    var type = ctx.Request.Query["type"].FirstOrDefault()
+               ?? ctx.Request.Query["topic"].FirstOrDefault();
+    var dataId = ctx.Request.Query["data.id"].FirstOrDefault()
+                 ?? ctx.Request.Query["id"].FirstOrDefault();
+
+    // If not in query, try JSON body
+    if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(dataId))
+    {
+        try
+        {
+            var body = await ctx.Request.ReadFromJsonAsync<MercadoPagoWebhookBody>(ct);
+            type ??= body?.Type ?? body?.Topic;
+            dataId ??= body?.Data?.Id;
+        }
+        catch { /* Ignore parse errors */ }
+    }
+
+    if (string.IsNullOrEmpty(type) || string.IsNullOrEmpty(dataId))
+        return Results.Ok(); // MP expects 200 even if we can't process
+
+    await mpSvc.HandleWebhookAsync(type, dataId, ct);
+    return Results.Ok();
+})
+.WithName("MercadoPagoWebhook")
+.WithTags("Payments");
+
+app.MapGet("/payments/status/{citaId:guid}", async (Guid citaId, IMercadoPagoService mpSvc, CancellationToken ct) =>
+{
+    var status = await mpSvc.GetPaymentStatusAsync(citaId, ct);
+    return status is not null ? Results.Ok(status) : Results.NotFound();
+})
+.WithName("GetPaymentStatus")
+.WithTags("Payments");
+
+app.MapGet("/payments/configured", (IMercadoPagoService mpSvc) =>
+    Results.Ok(new { configured = mpSvc.IsConfigured }))
+.WithName("IsPaymentConfigured")
+.WithTags("Payments");
+
 // ──── Health Check ────
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
 app.Run();
+
+// ── Request/Body DTOs for Mercado Pago endpoints ──
+record PaymentPreferenceRequest(Guid CitaId);
+
+record MercadoPagoWebhookBody(string? Type, string? Topic, MercadoPagoWebhookData? Data);
+record MercadoPagoWebhookData(string? Id);

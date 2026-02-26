@@ -33,6 +33,11 @@ public static class DependencyInjection
             configuration.GetSection(GoogleCalendarOptions.SectionName));
         services.AddScoped<IGoogleCalendarService, GoogleCalendarServiceImpl>();
 
+        // Mercado Pago
+        services.Configure<MercadoPagoOptions>(
+            configuration.GetSection(MercadoPagoOptions.SectionName));
+        services.AddScoped<IMercadoPagoService, MercadoPagoServiceImpl>();
+
         return services;
     }
 }

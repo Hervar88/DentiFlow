@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getClinicaProfile, getAppointments, bookAppointment, updateAppointmentStatus, cancelAppointment, getDentistas, type Cita } from '../api';
+import { getClinicaProfile, getAppointments, bookAppointment, updateAppointmentStatus, cancelAppointment, getDentistas, createPaymentPreference, isPaymentConfigured, type Cita } from '../api';
 import { CLINICA_SLUG } from '../App';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, CreditCard, Loader2 } from 'lucide-react';
 
 const estadoColor: Record<string, string> = {
   Pendiente: 'bg-yellow-100 text-yellow-800',
@@ -49,6 +49,11 @@ export default function CitasPage() {
   const cancelMutation = useMutation({
     mutationFn: cancelAppointment,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['appointments'] }),
+  });
+
+  const { data: paymentConfig } = useQuery({
+    queryKey: ['payment-configured'],
+    queryFn: isPaymentConfigured,
   });
 
   const bookMutation = useMutation({
@@ -150,16 +155,17 @@ export default function CitasPage() {
               <th className="text-left px-4 py-3 font-medium text-gray-500">Dentista</th>
               <th className="text-left px-4 py-3 font-medium text-gray-500">Motivo</th>
               <th className="text-left px-4 py-3 font-medium text-gray-500">Estado</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-500">Pago</th>
               <th className="text-left px-4 py-3 font-medium text-gray-500">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {citas.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-gray-400">No hay citas en este rango.</td>
+                <td colSpan={8} className="px-4 py-12 text-center text-gray-400">No hay citas en este rango.</td>
               </tr>
             ) : (
-              citas.map((cita) => <CitaTableRow key={cita.id} cita={cita} onStatusChange={(estado) => statusMutation.mutate({ id: cita.id, estado })} onCancel={() => cancelMutation.mutate(cita.id)} />)
+              citas.map((cita) => <CitaTableRow key={cita.id} cita={cita} paymentEnabled={paymentConfig?.configured ?? false} onStatusChange={(estado) => statusMutation.mutate({ id: cita.id, estado })} onCancel={() => cancelMutation.mutate(cita.id)} />)
             )}
           </tbody>
         </table>
@@ -168,9 +174,29 @@ export default function CitasPage() {
   );
 }
 
-function CitaTableRow({ cita, onStatusChange, onCancel }: { cita: Cita; onStatusChange: (estado: string) => void; onCancel: () => void }) {
+function CitaTableRow({ cita, paymentEnabled, onStatusChange, onCancel }: { cita: Cita; paymentEnabled: boolean; onStatusChange: (estado: string) => void; onCancel: () => void }) {
   const fecha = new Date(cita.fechaHora);
   const isCancelled = cita.estado === 'Cancelada';
+  const queryClient = useQueryClient();
+  const [generatingPayment, setGeneratingPayment] = useState(false);
+
+  const handleGeneratePayment = async () => {
+    setGeneratingPayment(true);
+    try {
+      const result = await createPaymentPreference(cita.id);
+      // Open the Mercado Pago checkout in a new tab (sandbox for dev, initPoint for prod)
+      const url = result.sandboxInitPoint || result.initPoint;
+      if (url) window.open(url, '_blank');
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setGeneratingPayment(false);
+    }
+  };
+
+  const isPaid = cita.estado === 'Pagada';
+  const hasPendingPayment = cita.mercadoPagoPaymentId?.startsWith('pref_');
 
   return (
     <tr className={`hover:bg-gray-50 ${isCancelled ? 'opacity-50' : ''}`}>
@@ -188,6 +214,26 @@ function CitaTableRow({ cita, onStatusChange, onCancel }: { cita: Cita; onStatus
         >
           {ESTADOS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+      </td>
+      <td className="px-4 py-3">
+        {isPaid ? (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-50 px-2 py-1 rounded-full">
+            <CreditCard size={12} /> Pagado
+          </span>
+        ) : hasPendingPayment ? (
+          <span className="text-xs text-amber-600 font-medium">Link enviado</span>
+        ) : paymentEnabled && cita.puedeGenerarPago ? (
+          <button
+            onClick={handleGeneratePayment}
+            disabled={generatingPayment}
+            className="inline-flex items-center gap-1 text-xs font-medium text-sky-600 bg-sky-50 hover:bg-sky-100 px-2 py-1 rounded-full transition"
+          >
+            {generatingPayment ? <Loader2 size={12} className="animate-spin" /> : <CreditCard size={12} />}
+            Cobrar
+          </button>
+        ) : (
+          <span className="text-xs text-gray-400">—</span>
+        )}
       </td>
       <td className="px-4 py-3">
         {!isCancelled && (

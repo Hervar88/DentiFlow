@@ -6,6 +6,7 @@ import PacientesPage from './pages/PacientesPage';
 import CitasPage from './pages/CitasPage';
 import LandingPage from './pages/LandingPage';
 import IntegrationsPage from './pages/IntegrationsPage';
+import PaymentResultPage from './pages/PaymentResultPage';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000 } },
@@ -72,6 +73,11 @@ function App() {
         <Routes>
           {/* Public Landing */}
           <Route path="/clinica/:slug" element={<LandingPage />} />
+
+          {/* Payment Result Pages (Mercado Pago return URLs) */}
+          <Route path="/pago-exitoso" element={<PaymentResultPage type="success" />} />
+          <Route path="/pago-fallido" element={<PaymentResultPage type="failure" />} />
+          <Route path="/pago-pendiente" element={<PaymentResultPage type="pending" />} />
 
           {/* Dashboard */}
           <Route path="/dashboard" element={<DashboardLayout><DashboardPage /></DashboardLayout>} />

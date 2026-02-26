@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getDentistas, getGoogleCalendarAuthUrl, getGoogleCalendarStatus, disconnectGoogleCalendar, type Dentista } from '../api';
+import { getDentistas, getGoogleCalendarAuthUrl, getGoogleCalendarStatus, disconnectGoogleCalendar, isPaymentConfigured, type Dentista } from '../api';
 import { CLINICA_SLUG } from '../App';
 import { getClinicaProfile } from '../api';
-import { Calendar, Link2, Unlink, CheckCircle2, Loader2 } from 'lucide-react';
+import { Calendar, Link2, Unlink, CheckCircle2, Loader2, CreditCard, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 
 export default function IntegrationsPage() {
@@ -68,18 +68,92 @@ export default function IntegrationsPage() {
         </div>
       </div>
 
+      {/* Mercado Pago Section */}
+      <MercadoPagoCard />
+
       {/* Placeholder for future integrations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <IntegrationPlaceholder
-          title="Mercado Pago"
-          description="Cobro de anticipos con Checkout Pro"
-          status="Próximamente"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
         <IntegrationPlaceholder
           title="WhatsApp"
           description="Recordatorios automáticos a pacientes"
           status="Próximamente"
         />
+      </div>
+    </div>
+  );
+}
+
+function MercadoPagoCard() {
+  const { data: paymentConfig, isLoading } = useQuery({
+    queryKey: ['payment-configured'],
+    queryFn: isPaymentConfigured,
+  });
+
+  const configured = paymentConfig?.configured ?? false;
+
+  return (
+    <div className="bg-white rounded-xl border shadow-sm mb-6">
+      <div className="px-6 py-4 border-b flex items-center gap-3">
+        <div className="p-2 bg-sky-50 rounded-lg">
+          <CreditCard className="text-sky-600" size={22} />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">Mercado Pago</h2>
+            {isLoading ? (
+              <Loader2 size={14} className="animate-spin text-gray-400" />
+            ) : configured ? (
+              <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <CheckCircle2 size={12} /> Configurado
+              </span>
+            ) : (
+              <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <AlertTriangle size={12} /> Sin configurar
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500">
+            Cobro de anticipos con Checkout Pro para confirmar citas.
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {configured ? (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm text-green-800 font-medium">Mercado Pago está activo</p>
+            <p className="text-sm text-green-600 mt-1">
+              Los pacientes pueden pagar anticipos desde la tabla de citas con el botón "Cobrar".
+              El monto del anticipo está configurado en el servidor.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm text-amber-800 font-medium">Configuración pendiente</p>
+            <p className="text-sm text-amber-600 mt-1">
+              Para activar los cobros, agrega tu <strong>Access Token</strong> de Mercado Pago en la
+              configuración del servidor (<code>appsettings.json</code> → sección <code>MercadoPago</code>).
+            </p>
+            <a
+              href="https://www.mercadopago.com.mx/developers/panel/app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 text-sm font-medium text-sky-600 hover:text-sky-700 underline"
+            >
+              Ir al panel de desarrolladores de Mercado Pago →
+            </a>
+          </div>
+        )}
+      </div>
+
+      <div className="px-6 py-4 bg-gray-50 border-t rounded-b-xl">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">¿Cómo funciona?</h3>
+        <ul className="text-sm text-gray-500 space-y-1">
+          <li>• Se genera un link de pago (Checkout Pro) al hacer clic en "Cobrar" en una cita</li>
+          <li>• El paciente paga el anticipo desde su navegador con tarjeta, transferencia u OXXO</li>
+          <li>• Al confirmarse el pago, la cita cambia automáticamente a estado "Pagada"</li>
+          <li>• El monto del anticipo se configura en el servidor (default: $500 MXN)</li>
+        </ul>
       </div>
     </div>
   );

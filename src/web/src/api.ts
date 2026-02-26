@@ -64,6 +64,8 @@ export interface Cita {
   estado: string;
   nombreDentista: string;
   nombrePaciente: string;
+  mercadoPagoPaymentId: string | null;
+  puedeGenerarPago: boolean;
   createdAt: string;
 }
 
@@ -145,3 +147,29 @@ export const getGoogleCalendarStatus = (dentistaId: string) =>
 
 export const disconnectGoogleCalendar = (dentistaId: string) =>
   request<{ message: string }>(`/google-calendar/disconnect/${dentistaId}`, { method: 'DELETE' });
+
+// ── Mercado Pago ──
+export interface PaymentPreferenceResult {
+  preferenceId: string;
+  initPoint: string;
+  sandboxInitPoint: string;
+}
+
+export interface PaymentStatus {
+  paymentId: string | null;
+  status: string;
+  amountPaid: number | null;
+  paidAt: string | null;
+}
+
+export const createPaymentPreference = (citaId: string) =>
+  request<PaymentPreferenceResult>('/payments/create-preference', {
+    method: 'POST',
+    body: JSON.stringify({ citaId }),
+  });
+
+export const getPaymentStatus = (citaId: string) =>
+  request<PaymentStatus>(`/payments/status/${citaId}`);
+
+export const isPaymentConfigured = () =>
+  request<{ configured: boolean }>('/payments/configured');
