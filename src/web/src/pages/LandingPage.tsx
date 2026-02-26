@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getClinicaProfile, bookAppointment } from '../api';
 import ChatWidget from '../components/ChatWidget';
+import WhatsAppButton from '../components/WhatsAppButton';
 import {
   MapPin, Phone, CheckCircle, Star, Shield, Clock, Heart,
   Sparkles, Smile, Stethoscope, CalendarCheck, ArrowRight, X,
@@ -287,6 +288,9 @@ export default function LandingPage() {
 
       {/* ═══════════════════════════ AI CHAT WIDGET ═══════════════════════════ */}
       <ChatWidget slug={slug!} clinicaNombre={clinica.nombre} />
+
+      {/* ═══════════════════════════ WHATSAPP BUTTON ═══════════════════════════ */}
+      <WhatsAppButton telefono={clinica.telefono} clinicaNombre={clinica.nombre} />
 
       {/* ═══════════════════════════ BOOKING MODAL ═══════════════════════════ */}
       {showBooking && (
