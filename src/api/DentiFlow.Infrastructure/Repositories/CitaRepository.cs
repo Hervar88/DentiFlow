@@ -17,6 +17,12 @@ public class CitaRepository : ICitaRepository
             .Include(c => c.Paciente)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
+    public async Task<Cita?> GetByGoogleCalendarEventIdAsync(string eventId, CancellationToken ct = default)
+        => await _db.Citas
+            .Include(c => c.Dentista)
+            .Include(c => c.Paciente)
+            .FirstOrDefaultAsync(c => c.GoogleCalendarEventId == eventId, ct);
+
     public async Task<List<Cita>> GetByClinicaAsync(Guid clinicaId, DateTime desde, DateTime hasta, CancellationToken ct = default)
         => await _db.Citas
             .Include(c => c.Dentista)

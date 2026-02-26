@@ -34,6 +34,12 @@ public class DentiFlowDbContext : DbContext
             e.Property(d => d.Apellido).HasMaxLength(100).IsRequired();
             e.Property(d => d.Email).HasMaxLength(200).IsRequired();
             e.HasIndex(d => d.Email).IsUnique();
+
+            // Google Calendar OAuth2 fields
+            e.Property(d => d.GoogleCalendarRefreshToken).HasMaxLength(500);
+            e.Property(d => d.GoogleCalendarAccessToken).HasMaxLength(2000);
+            e.Property(d => d.GoogleCalendarEmail).HasMaxLength(200);
+
             e.HasOne(d => d.Clinica)
                 .WithMany(c => c.Dentistas)
                 .HasForeignKey(d => d.ClinicaId)

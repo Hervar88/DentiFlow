@@ -23,4 +23,6 @@ public record DentistaDto(
     string Email,
     string? Especialidad,
     string? Telefono,
+    bool GoogleCalendarConnected,
+    string? GoogleCalendarEmail,
     DateTime CreatedAt);

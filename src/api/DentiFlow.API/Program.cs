@@ -1,5 +1,6 @@
 using DentiFlow.Application;
 using DentiFlow.Application.DTOs;
+using DentiFlow.Application.Interfaces;
 using DentiFlow.Application.Services;
 using DentiFlow.Domain.Entities;
 using DentiFlow.Infrastructure;
@@ -170,6 +171,75 @@ app.MapDelete("/appointments/{id:guid}", async (Guid id, CitaService svc, Cancel
 })
 .WithName("CancelAppointment")
 .WithTags("Citas");
+
+// ══════════════════════════════════════════════════════════════
+// ──── Google Calendar Endpoints ────
+// ══════════════════════════════════════════════════════════════
+
+app.MapGet("/google-calendar/auth-url", (Guid dentistaId, IGoogleCalendarService gcSvc) =>
+{
+    var url = gcSvc.GetAuthorizationUrl(dentistaId);
+    return Results.Ok(new { authUrl = url });
+})
+.WithName("GoogleCalendarAuthUrl")
+.WithTags("GoogleCalendar");
+
+app.MapGet("/google-calendar/callback", async (string code, string state, IGoogleCalendarService gcSvc, CancellationToken ct) =>
+{
+    if (!Guid.TryParse(state, out var dentistaId))
+        return Results.BadRequest(new { error = "State inválido." });
+
+    try
+    {
+        await gcSvc.HandleCallbackAsync(code, dentistaId, ct);
+        // Redirect back to the dashboard with success
+        return Results.Redirect("/dashboard?gcal=connected");
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+})
+.WithName("GoogleCalendarCallback")
+.WithTags("GoogleCalendar");
+
+app.MapGet("/google-calendar/status/{dentistaId:guid}", async (Guid dentistaId, IGoogleCalendarService gcSvc, CancellationToken ct) =>
+{
+    var status = await gcSvc.GetStatusAsync(dentistaId, ct);
+    return Results.Ok(status);
+})
+.WithName("GoogleCalendarStatus")
+.WithTags("GoogleCalendar");
+
+app.MapDelete("/google-calendar/disconnect/{dentistaId:guid}", async (Guid dentistaId, IGoogleCalendarService gcSvc, CancellationToken ct) =>
+{
+    try
+    {
+        await gcSvc.DisconnectAsync(dentistaId, ct);
+        return Results.Ok(new { message = "Google Calendar desconectado." });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+})
+.WithName("GoogleCalendarDisconnect")
+.WithTags("GoogleCalendar");
+
+app.MapPost("/google-calendar/webhook", async (HttpContext ctx, IGoogleCalendarService gcSvc, CancellationToken ct) =>
+{
+    // Google sends channel info in headers
+    var channelId = ctx.Request.Headers["X-Goog-Channel-ID"].FirstOrDefault();
+    var resourceId = ctx.Request.Headers["X-Goog-Resource-ID"].FirstOrDefault();
+
+    if (string.IsNullOrEmpty(channelId) || string.IsNullOrEmpty(resourceId))
+        return Results.BadRequest();
+
+    await gcSvc.HandleWebhookAsync(channelId, resourceId, ct);
+    return Results.Ok();
+})
+.WithName("GoogleCalendarWebhook")
+.WithTags("GoogleCalendar");
 
 // ──── Health Check ────
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));

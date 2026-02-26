@@ -14,7 +14,8 @@ public class DentistaService
     {
         var dentistas = await _repo.GetByClinicaAsync(clinicaId, ct);
         return dentistas.Select(d => new DentistaDto(
-            d.Id, d.ClinicaId, d.Nombre, d.Apellido, d.Email, d.Especialidad, d.Telefono, d.CreatedAt
+            d.Id, d.ClinicaId, d.Nombre, d.Apellido, d.Email, d.Especialidad, d.Telefono,
+            d.GoogleCalendarConnected, d.GoogleCalendarEmail, d.CreatedAt
         )).ToList();
     }
 
@@ -22,7 +23,8 @@ public class DentistaService
     {
         var d = await _repo.GetByIdAsync(id, ct);
         if (d is null) return null;
-        return new DentistaDto(d.Id, d.ClinicaId, d.Nombre, d.Apellido, d.Email, d.Especialidad, d.Telefono, d.CreatedAt);
+        return new DentistaDto(d.Id, d.ClinicaId, d.Nombre, d.Apellido, d.Email, d.Especialidad, d.Telefono,
+            d.GoogleCalendarConnected, d.GoogleCalendarEmail, d.CreatedAt);
     }
 
     public async Task<DentistaDto> CreateAsync(CrearDentistaRequest request, CancellationToken ct = default)
@@ -39,7 +41,8 @@ public class DentistaService
 
         return new DentistaDto(
             dentista.Id, dentista.ClinicaId, dentista.Nombre, dentista.Apellido,
-            dentista.Email, dentista.Especialidad, dentista.Telefono, dentista.CreatedAt);
+            dentista.Email, dentista.Especialidad, dentista.Telefono,
+            dentista.GoogleCalendarConnected, dentista.GoogleCalendarEmail, dentista.CreatedAt);
     }
 
     public async Task<DentistaDto?> UpdateAsync(Guid id, ActualizarDentistaRequest request, CancellationToken ct = default)
@@ -57,6 +60,7 @@ public class DentistaService
 
         return new DentistaDto(
             dentista.Id, dentista.ClinicaId, dentista.Nombre, dentista.Apellido,
-            dentista.Email, dentista.Especialidad, dentista.Telefono, dentista.CreatedAt);
+            dentista.Email, dentista.Especialidad, dentista.Telefono,
+            dentista.GoogleCalendarConnected, dentista.GoogleCalendarEmail, dentista.CreatedAt);
     }
 }

@@ -1,10 +1,11 @@
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Calendar, Users, LayoutDashboard, Globe } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, Globe, Plug } from 'lucide-react';
 import DashboardPage from './pages/DashboardPage';
 import PacientesPage from './pages/PacientesPage';
 import CitasPage from './pages/CitasPage';
 import LandingPage from './pages/LandingPage';
+import IntegrationsPage from './pages/IntegrationsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000 } },
@@ -46,6 +47,9 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         <NavLink to="/dashboard/pacientes">
           <Users size={18} /> Pacientes
         </NavLink>
+        <NavLink to="/dashboard/integraciones">
+          <Plug size={18} /> Integraciones
+        </NavLink>
         <div className="mt-auto pt-4 border-t">
           <NavLink to={`/clinica/${CLINICA_SLUG}`}>
             <Globe size={18} /> Ver Landing
@@ -73,6 +77,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardLayout><DashboardPage /></DashboardLayout>} />
           <Route path="/dashboard/citas" element={<DashboardLayout><CitasPage /></DashboardLayout>} />
           <Route path="/dashboard/pacientes" element={<DashboardLayout><PacientesPage /></DashboardLayout>} />
+          <Route path="/dashboard/integraciones" element={<DashboardLayout><IntegrationsPage /></DashboardLayout>} />
 
           {/* Redirect home to dashboard */}
           <Route path="*" element={<DashboardLayout><DashboardPage /></DashboardLayout>} />

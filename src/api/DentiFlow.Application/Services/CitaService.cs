@@ -1,4 +1,5 @@
 using DentiFlow.Application.DTOs;
+using DentiFlow.Application.Interfaces;
 using DentiFlow.Domain.Entities;
 using DentiFlow.Domain.Interfaces;
 
@@ -9,12 +10,18 @@ public class CitaService
     private readonly ICitaRepository _citaRepo;
     private readonly IPacienteRepository _pacienteRepo;
     private readonly IDentistaRepository _dentistaRepo;
+    private readonly IGoogleCalendarService _googleCalendar;
 
-    public CitaService(ICitaRepository citaRepo, IPacienteRepository pacienteRepo, IDentistaRepository dentistaRepo)
+    public CitaService(
+        ICitaRepository citaRepo,
+        IPacienteRepository pacienteRepo,
+        IDentistaRepository dentistaRepo,
+        IGoogleCalendarService googleCalendar)
     {
         _citaRepo = citaRepo;
         _pacienteRepo = pacienteRepo;
         _dentistaRepo = dentistaRepo;
+        _googleCalendar = googleCalendar;
     }
 
     public async Task<CitaDto> BookAppointmentAsync(CrearCitaRequest request, CancellationToken ct = default)
@@ -54,6 +61,15 @@ public class CitaService
 
         // Recargar con navegaciones
         var citaCompleta = await _citaRepo.GetByIdAsync(cita.Id, ct);
+
+        // Sync to Google Calendar (non-blocking — appointment still created if sync fails)
+        var eventId = await _googleCalendar.SyncAppointmentAsync(citaCompleta!, ct);
+        if (eventId is not null)
+        {
+            citaCompleta!.GoogleCalendarEventId = eventId;
+            await _citaRepo.UpdateAsync(citaCompleta, ct);
+        }
+
         return CitaMapper.ToDto(citaCompleta!);
     }
 
@@ -74,7 +90,11 @@ public class CitaService
         var cita = await _citaRepo.GetByIdAsync(id, ct);
         if (cita is null) return null;
 
+        // Delete from Google Calendar
+        await _googleCalendar.DeleteAppointmentEventAsync(cita, ct);
+
         cita.Estado = EstadoCita.Cancelada;
+        cita.GoogleCalendarEventId = null;
         await _citaRepo.UpdateAsync(cita, ct);
 
         return CitaMapper.ToDto(cita);
@@ -87,6 +107,9 @@ public class CitaService
 
         cita.Estado = nuevoEstado;
         await _citaRepo.UpdateAsync(cita, ct);
+
+        // Sync the updated state to Google Calendar (color changes, etc.)
+        await _googleCalendar.SyncAppointmentAsync(cita, ct);
 
         return CitaMapper.ToDto(cita);
     }

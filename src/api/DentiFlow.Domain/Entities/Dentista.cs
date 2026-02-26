@@ -9,8 +9,14 @@ public class Dentista
     public string Email { get; set; } = string.Empty;
     public string? Especialidad { get; set; }
     public string? Telefono { get; set; }
-    public string? GoogleCalendarToken { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Google Calendar OAuth2
+    public bool GoogleCalendarConnected { get; set; }
+    public string? GoogleCalendarRefreshToken { get; set; }
+    public string? GoogleCalendarAccessToken { get; set; }
+    public DateTime? GoogleCalendarTokenExpiry { get; set; }
+    public string? GoogleCalendarEmail { get; set; }
 
     // Navigation
     public Clinica Clinica { get; set; } = null!;

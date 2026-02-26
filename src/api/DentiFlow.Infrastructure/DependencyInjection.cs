@@ -1,5 +1,8 @@
+using DentiFlow.Application.Interfaces;
 using DentiFlow.Domain.Interfaces;
+using DentiFlow.Infrastructure.Configuration;
 using DentiFlow.Infrastructure.Data;
+using DentiFlow.Infrastructure.ExternalServices;
 using DentiFlow.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -11,15 +14,24 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection")!;
+
+        services.AddNpgsqlDataSource(connectionString, builder => builder.EnableDynamicJson());
+
         services.AddDbContext<DentiFlowDbContext>(options =>
             options.UseNpgsql(
-                configuration.GetConnectionString("DefaultConnection"),
                 npgsql => npgsql.MigrationsAssembly(typeof(DentiFlowDbContext).Assembly.FullName)));
 
+        // Repositories
         services.AddScoped<IClinicaRepository, ClinicaRepository>();
         services.AddScoped<IDentistaRepository, DentistaRepository>();
         services.AddScoped<IPacienteRepository, PacienteRepository>();
         services.AddScoped<ICitaRepository, CitaRepository>();
+
+        // Google Calendar
+        services.Configure<GoogleCalendarOptions>(
+            configuration.GetSection(GoogleCalendarOptions.SectionName));
+        services.AddScoped<IGoogleCalendarService, GoogleCalendarServiceImpl>();
 
         return services;
     }

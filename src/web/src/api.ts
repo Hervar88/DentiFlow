@@ -40,6 +40,8 @@ export interface Dentista {
   email: string;
   especialidad: string | null;
   telefono: string | null;
+  googleCalendarConnected: boolean;
+  googleCalendarEmail: string | null;
   createdAt: string;
 }
 
@@ -127,3 +129,19 @@ export const updateAppointmentStatus = (id: string, estado: string) =>
 
 export const cancelAppointment = (id: string) =>
   request<Cita>(`/appointments/${id}`, { method: 'DELETE' });
+
+// ── Google Calendar ──
+export interface GoogleCalendarStatus {
+  connected: boolean;
+  googleEmail: string | null;
+  tokenExpiry: string | null;
+}
+
+export const getGoogleCalendarAuthUrl = (dentistaId: string) =>
+  request<{ authUrl: string }>(`/google-calendar/auth-url?dentistaId=${dentistaId}`);
+
+export const getGoogleCalendarStatus = (dentistaId: string) =>
+  request<GoogleCalendarStatus>(`/google-calendar/status/${dentistaId}`);
+
+export const disconnectGoogleCalendar = (dentistaId: string) =>
+  request<{ message: string }>(`/google-calendar/disconnect/${dentistaId}`, { method: 'DELETE' });
