@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getDentistas, getGoogleCalendarAuthUrl, getGoogleCalendarStatus, disconnectGoogleCalendar, isPaymentConfigured, type Dentista } from '../api';
+import { getDentistas, getGoogleCalendarAuthUrl, getGoogleCalendarStatus, disconnectGoogleCalendar, isPaymentConfigured, isWhatsAppConfigured, type Dentista } from '../api';
 import { CLINICA_SLUG } from '../App';
 import { getClinicaProfile } from '../api';
-import { Calendar, Link2, Unlink, CheckCircle2, Loader2, CreditCard, AlertTriangle } from 'lucide-react';
+import { Calendar, Link2, Unlink, CheckCircle2, Loader2, CreditCard, AlertTriangle, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 
 export default function IntegrationsPage() {
@@ -71,14 +71,8 @@ export default function IntegrationsPage() {
       {/* Mercado Pago Section */}
       <MercadoPagoCard />
 
-      {/* Placeholder for future integrations */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <IntegrationPlaceholder
-          title="WhatsApp"
-          description="Recordatorios automáticos a pacientes"
-          status="Próximamente"
-        />
-      </div>
+      {/* WhatsApp Section */}
+      <WhatsAppCard />
     </div>
   );
 }
@@ -153,6 +147,84 @@ function MercadoPagoCard() {
           <li>• El paciente paga el anticipo desde su navegador con tarjeta, transferencia u OXXO</li>
           <li>• Al confirmarse el pago, la cita cambia automáticamente a estado "Pagada"</li>
           <li>• El monto del anticipo se configura en el servidor (default: $500 MXN)</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+function WhatsAppCard() {
+  const { data: waConfig, isLoading } = useQuery({
+    queryKey: ['whatsapp-configured'],
+    queryFn: isWhatsAppConfigured,
+  });
+
+  const configured = waConfig?.configured ?? false;
+
+  return (
+    <div className="bg-white rounded-xl border shadow-sm mb-6">
+      <div className="px-6 py-4 border-b flex items-center gap-3">
+        <div className="p-2 bg-green-50 rounded-lg">
+          <MessageCircle className="text-green-600" size={22} />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900">WhatsApp</h2>
+            {isLoading ? (
+              <Loader2 size={14} className="animate-spin text-gray-400" />
+            ) : configured ? (
+              <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <CheckCircle2 size={12} /> Configurado
+              </span>
+            ) : (
+              <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                <AlertTriangle size={12} /> Sin configurar
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-500">
+            Notificaciones automáticas por WhatsApp a pacientes vía Twilio.
+          </p>
+        </div>
+      </div>
+
+      <div className="p-6">
+        {configured ? (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm text-green-800 font-medium">WhatsApp está activo</p>
+            <p className="text-sm text-green-600 mt-1">
+              Los pacientes recibirán notificaciones automáticas al agendar, cancelar o cambiar
+              el estado de sus citas. También puedes enviar recordatorios manuales desde la tabla de citas.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <p className="text-sm text-amber-800 font-medium">Configuración pendiente</p>
+            <p className="text-sm text-amber-600 mt-1">
+              Para activar WhatsApp, agrega tus credenciales de <strong>Twilio</strong> en la
+              configuración del servidor (<code>appsettings.json</code> → sección <code>Twilio</code>):
+              Account SID, Auth Token y número de WhatsApp.
+            </p>
+            <a
+              href="https://www.twilio.com/console/sms/whatsapp/sandbox"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mt-3 text-sm font-medium text-sky-600 hover:text-sky-700 underline"
+            >
+              Ir al sandbox de WhatsApp en Twilio →
+            </a>
+          </div>
+        )}
+      </div>
+
+      <div className="px-6 py-4 bg-gray-50 border-t rounded-b-xl">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">¿Cómo funciona?</h3>
+        <ul className="text-sm text-gray-500 space-y-1">
+          <li>• Al agendar una cita, el paciente recibe confirmación por WhatsApp</li>
+          <li>• Si se cancela una cita, se notifica automáticamente al paciente</li>
+          <li>• Los cambios de estado (confirmada, pagada, completada) también generan notificación</li>
+          <li>• Puedes enviar recordatorios manuales antes de las citas</li>
+          <li>• El número del paciente debe incluir código de país (ej: +52 para México)</li>
         </ul>
       </div>
     </div>
@@ -241,22 +313,6 @@ function DentistaCalendarCard({ dentista, onStatusChange }: {
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function IntegrationPlaceholder({ title, description, status }: {
-  title: string;
-  description: string;
-  status: string;
-}) {
-  return (
-    <div className="bg-white rounded-xl border shadow-sm p-5 opacity-60">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{status}</span>
-      </div>
-      <p className="text-sm text-gray-500">{description}</p>
     </div>
   );
 }

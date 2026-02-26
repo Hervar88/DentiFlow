@@ -38,6 +38,11 @@ public static class DependencyInjection
             configuration.GetSection(MercadoPagoOptions.SectionName));
         services.AddScoped<IMercadoPagoService, MercadoPagoServiceImpl>();
 
+        // Twilio WhatsApp
+        services.Configure<TwilioOptions>(
+            configuration.GetSection(TwilioOptions.SectionName));
+        services.AddScoped<IWhatsAppService, TwilioWhatsAppService>();
+
         return services;
     }
 }

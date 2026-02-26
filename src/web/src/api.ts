@@ -173,3 +173,10 @@ export const getPaymentStatus = (citaId: string) =>
 
 export const isPaymentConfigured = () =>
   request<{ configured: boolean }>('/payments/configured');
+
+// ── WhatsApp ──
+export const isWhatsAppConfigured = () =>
+  request<{ configured: boolean }>('/whatsapp/configured');
+
+export const sendWhatsAppReminder = (citaId: string) =>
+  request<{ message: string }>(`/whatsapp/send-reminder/${citaId}`, { method: 'POST' });

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getClinicaProfile, getAppointments, bookAppointment, updateAppointmentStatus, cancelAppointment, getDentistas, createPaymentPreference, isPaymentConfigured, type Cita } from '../api';
+import { getClinicaProfile, getAppointments, bookAppointment, updateAppointmentStatus, cancelAppointment, getDentistas, createPaymentPreference, isPaymentConfigured, isWhatsAppConfigured, sendWhatsAppReminder, type Cita } from '../api';
 import { CLINICA_SLUG } from '../App';
-import { Plus, X, CreditCard, Loader2 } from 'lucide-react';
+import { Plus, X, CreditCard, Loader2, MessageCircle } from 'lucide-react';
 
 const estadoColor: Record<string, string> = {
   Pendiente: 'bg-yellow-100 text-yellow-800',
@@ -54,6 +54,11 @@ export default function CitasPage() {
   const { data: paymentConfig } = useQuery({
     queryKey: ['payment-configured'],
     queryFn: isPaymentConfigured,
+  });
+
+  const { data: waConfig } = useQuery({
+    queryKey: ['whatsapp-configured'],
+    queryFn: isWhatsAppConfigured,
   });
 
   const bookMutation = useMutation({
@@ -165,7 +170,7 @@ export default function CitasPage() {
                 <td colSpan={8} className="px-4 py-12 text-center text-gray-400">No hay citas en este rango.</td>
               </tr>
             ) : (
-              citas.map((cita) => <CitaTableRow key={cita.id} cita={cita} paymentEnabled={paymentConfig?.configured ?? false} onStatusChange={(estado) => statusMutation.mutate({ id: cita.id, estado })} onCancel={() => cancelMutation.mutate(cita.id)} />)
+              citas.map((cita) => <CitaTableRow key={cita.id} cita={cita} paymentEnabled={paymentConfig?.configured ?? false} whatsAppEnabled={waConfig?.configured ?? false} onStatusChange={(estado) => statusMutation.mutate({ id: cita.id, estado })} onCancel={() => cancelMutation.mutate(cita.id)} />)
             )}
           </tbody>
         </table>
@@ -174,11 +179,13 @@ export default function CitasPage() {
   );
 }
 
-function CitaTableRow({ cita, paymentEnabled, onStatusChange, onCancel }: { cita: Cita; paymentEnabled: boolean; onStatusChange: (estado: string) => void; onCancel: () => void }) {
+function CitaTableRow({ cita, paymentEnabled, whatsAppEnabled, onStatusChange, onCancel }: { cita: Cita; paymentEnabled: boolean; whatsAppEnabled: boolean; onStatusChange: (estado: string) => void; onCancel: () => void }) {
   const fecha = new Date(cita.fechaHora);
   const isCancelled = cita.estado === 'Cancelada';
+  const isCompleted = cita.estado === 'Completada';
   const queryClient = useQueryClient();
   const [generatingPayment, setGeneratingPayment] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
 
   const handleGeneratePayment = async () => {
     setGeneratingPayment(true);
@@ -236,11 +243,33 @@ function CitaTableRow({ cita, paymentEnabled, onStatusChange, onCancel }: { cita
         )}
       </td>
       <td className="px-4 py-3">
-        {!isCancelled && (
-          <button onClick={onCancel} className="text-xs text-red-600 hover:text-red-800 font-medium">
-            Cancelar
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {whatsAppEnabled && !isCancelled && !isCompleted && (
+            <button
+              onClick={async () => {
+                setSendingReminder(true);
+                try {
+                  await sendWhatsAppReminder(cita.id);
+                } catch (err) {
+                  alert((err as Error).message);
+                } finally {
+                  setSendingReminder(false);
+                }
+              }}
+              disabled={sendingReminder}
+              className="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100 px-2 py-1 rounded-full transition"
+              title="Enviar recordatorio por WhatsApp"
+            >
+              {sendingReminder ? <Loader2 size={12} className="animate-spin" /> : <MessageCircle size={12} />}
+              Recordar
+            </button>
+          )}
+          {!isCancelled && (
+            <button onClick={onCancel} className="text-xs text-red-600 hover:text-red-800 font-medium">
+              Cancelar
+            </button>
+          )}
+        </div>
       </td>
     </tr>
   );

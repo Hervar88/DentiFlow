@@ -311,6 +311,25 @@ app.MapGet("/payments/configured", (IMercadoPagoService mpSvc) =>
 .WithName("IsPaymentConfigured")
 .WithTags("Payments");
 
+// ══════════════════════════════════════════════════════════════
+// ──── WhatsApp Endpoints ────
+// ══════════════════════════════════════════════════════════════
+
+app.MapGet("/whatsapp/configured", (IWhatsAppService waSvc) =>
+    Results.Ok(new { configured = waSvc.IsConfigured }))
+.WithName("IsWhatsAppConfigured")
+.WithTags("WhatsApp");
+
+app.MapPost("/whatsapp/send-reminder/{citaId:guid}", async (Guid citaId, CitaService citaSvc, CancellationToken ct) =>
+{
+    var sent = await citaSvc.SendReminderAsync(citaId, ct);
+    return sent
+        ? Results.Ok(new { message = "Recordatorio enviado por WhatsApp" })
+        : Results.NotFound(new { error = "Cita no encontrada" });
+})
+.WithName("SendWhatsAppReminder")
+.WithTags("WhatsApp");
+
 // ──── Health Check ────
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
